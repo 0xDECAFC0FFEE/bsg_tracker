@@ -1,0 +1,6 @@
+logs/*
+*.pyc
+*.swp
+.DS_Store
+._*
+.vscode/*
