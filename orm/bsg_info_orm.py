@@ -54,6 +54,7 @@ class Game(Base):
 
     cylons = relationship("Cylon")
     humans = relationship("Human")
+    cylon_leaders = relationship("CylonLeader")
 
 
 class Cylon(Base):
@@ -74,6 +75,20 @@ class Human(Base):
     game_id = Column(INT, ForeignKey('game.game_id', ondelete='CASCADE'), primary_key=True)
     user_id = Column(INT, ForeignKey('user.user_id'), primary_key=True)
     __tablename__ = "human"
+    __table_args = (
+        {
+            "schema": DATABASE_NAME,
+            "mysql_engine": "InnoDB",
+            "mysql_charset": "utf8",
+        },
+    )
+    user = relationship("User")
+
+
+class CylonLeader(Base):
+    game_id = Column(INT, ForeignKey('game.game_id', ondelete='CASCADE'), primary_key=True)
+    user_id = Column(INT, ForeignKey('user.user_id'), primary_key=True)
+    __tablename__ = "cylon_leader"
     __table_args = (
         {
             "schema": DATABASE_NAME,

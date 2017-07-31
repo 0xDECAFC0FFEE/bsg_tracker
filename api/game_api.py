@@ -4,7 +4,7 @@ import sys
 import os
 from tornado.log import enable_pretty_logging
 
-from orm.bsg_info_orm import User, Game, Cylon, Human
+from orm.bsg_info_orm import User, Game, Cylon, Human, CylonLeader
 from common import sql
 
 loss_condition_map = {
@@ -41,6 +41,7 @@ def games_to_json(games):
         
         cylons = [cylon.user.name for cylon in game.cylons]
         humans = [human.user.name for human in game.humans]
+        cylon_leaders = [cylon_leader.user.name for cylon_leader in game.cylon_leaders]
 
         output.append({
             "date": str(game.date),
@@ -49,6 +50,7 @@ def games_to_json(games):
             "details": details,
             "cylons": cylons,
             "humans": humans,
+            "cylon_leaders": cylon_leaders,
         })
     return output
 
@@ -57,9 +59,14 @@ class AddGameHandler(tornado.web.RequestHandler):
     def post(self):
         cylon_user_names = self.get_arguments(name="cylons", strip=True)
         human_user_names = self.get_arguments(name="humans", strip=True)
+        cylon_leader_user_names = self.get_arguments(name="cylon_leaders", strip=True)
 
         for cylon_user_name in cylon_user_names:
             assert cylon_user_name not in human_user_names
+            assert cylon_user_name not in cylon_leader_user_names
+        
+        for human_user_name in human_user_names:
+            assert human_user_name not in cylon_leader_user_names
 
         [loss_condition] = self.get_arguments(name="loss_condition", strip=True) or [None]
         loss_condition = loss_condition_map[loss_condition]
@@ -104,7 +111,10 @@ class AddGameHandler(tornado.web.RequestHandler):
                 user = session.query(User).filter(User.name == human_user_name).one()
                 new_human = Human(game_id=new_game.game_id, user_id=user.user_id)
                 session.add(new_human)
-        
+            for cylon_leader_user_name in cylon_leader_user_names:
+                user = session.query(User).filter(User.name == cylon_leader_user_name).one()
+                new_cylon_leader = CylonLeader(game_id=new_game.game_id, user_id=user.user_id)
+                session.add(new_cylon_leader)
         self.write({"success": True})
 
 

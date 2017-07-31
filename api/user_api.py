@@ -6,7 +6,7 @@ import re
 from sqlalchemy import join
 from tornado.log import enable_pretty_logging
 
-from orm.bsg_info_orm import User, Human, Cylon, Game
+from orm.bsg_info_orm import User, Human, Cylon, Game, CylonLeader
 from api.game_api import games_to_json
 from common import sql
 
@@ -54,7 +54,7 @@ class AddUserHandler(tornado.web.RequestHandler):
 
 class GetUsersHandler(tornado.web.RequestHandler):
     def post(self):
-        with sql.db_write_session() as session:
+        with sql.db_read_session() as session:
             users = session.query(User.name).all()
             users = [user for [user] in users]
         self.write({"success": True, "users":users})
@@ -64,7 +64,7 @@ class GetNameHandler(tornado.web.RequestHandler):
     def post(self):
         user_id = self.get_arguments(name="user_id", strip=True)
         
-        with sql.db_write_session() as session:
+        with sql.db_read_session() as session:
             [user] = session.query(User.name).filter(User.user_id==user_id).one()
         self.write({"success": True, "user":user})
 
@@ -73,7 +73,7 @@ class GetIdHandler(tornado.web.RequestHandler):
     def post(self):
         user_name = get_name(self)
         
-        with sql.db_write_session() as session:
+        with sql.db_read_session() as session:
             user = get_user(session, user_name).one()
             user_id = user.user_id
         self.write({"success": True, "user":user_id})
@@ -83,7 +83,7 @@ class GetHumanGamesHandler(tornado.web.RequestHandler):
     def post(self):
         user_name = get_name(self)
 
-        with sql.db_write_session() as session:
+        with sql.db_read_session() as session:
             games = session.query(Game).join(Human, Human.game_id==Game.game_id).join(User, Human.user_id==User.user_id).filter(User.name==user_name).all()
             games = games_to_json(games)
         self.write({"success": True, "games":games})
@@ -93,8 +93,16 @@ class GetCylonGamesHandler(tornado.web.RequestHandler):
     def post(self):
         user_name = get_name(self)
 
-        with sql.db_write_session() as session:
+        with sql.db_read_session() as session:
             games = session.query(Game).join(Cylon, Cylon.game_id==Game.game_id).join(User, Cylon.user_id==User.user_id).filter(User.name==user_name).all()
             games = games_to_json(games)
         self.write({"success": True, "games":games})
 
+class GetCylonLeaderGamesHandler(tornado.web.RequestHandler):
+    def post(self):
+        user_name = get_name(self)
+
+        with sql.db_read_session() as session:
+            games = session.query(Game).join(CylonLeader, CylonLeader.game_id==Game.game_id).join(User, CylonLeader.user_id==User.user_id).filter(User.name==user_name).all()
+            games = games_to_json(games)
+        self.write({"success": True, "games":games})

@@ -10,6 +10,7 @@ from api.user_api import UpdateUserHandler
 from api.user_api import GetUsersHandler
 from api.user_api import GetHumanGamesHandler
 from api.user_api import GetCylonGamesHandler
+from api.user_api import GetCylonLeaderGamesHandler
 from api.user_api import GetNameHandler
 from api.user_api import GetIdHandler
 from api.game_api import AddGameHandler
@@ -28,6 +29,7 @@ def make_app():
         (r"/api/user/update", UpdateUserHandler),
         (r"/api/user/humanGames", GetHumanGamesHandler),
         (r"/api/user/cylonGames", GetCylonGamesHandler),
+        (r"/api/user/cylonLeaderGames", GetCylonLeaderGamesHandler),
         (r"/api/user/all", GetUsersHandler),
         (r"/api/user/getName", GetNameHandler),
         (r"/api/user/getId", GetIdHandler),
