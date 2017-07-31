@@ -58,6 +58,9 @@ class AddGameHandler(tornado.web.RequestHandler):
         cylon_user_names = self.get_arguments(name="cylons", strip=True)
         human_user_names = self.get_arguments(name="humans", strip=True)
 
+        for cylon_user_name in cylon_user_names:
+            assert cylon_user_name not in human_user_names
+
         [loss_condition] = self.get_arguments(name="loss_condition", strip=True) or [None]
         loss_condition = loss_condition_map[loss_condition]
         [raptors_left] = self.get_arguments(name="raptors_left", strip=True) or [None]
