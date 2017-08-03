@@ -4,7 +4,7 @@ from contextlib import contextmanager
 
 def get_session():
     uri="mysql+pymysql://root:toor@localhost/bsg_info"
-    return sessionmaker(bind=create_engine(uri))()
+    return sessionmaker(bind=create_engine(uri), autoflush=False)()
     
     
 @contextmanager

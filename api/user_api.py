@@ -6,7 +6,7 @@ import re
 from sqlalchemy import join
 from tornado.log import enable_pretty_logging
 
-from orm.bsg_info_orm import User, Human, Cylon, Game, CylonLeader
+from orm.bsg_info_orm import User, Human, Cylon, Game, CylonLeader, Player
 from api.game_api import games_to_json
 from common import sql
 
@@ -85,7 +85,7 @@ class GetHumanGamesHandler(tornado.web.RequestHandler):
 
         with sql.db_read_session() as session:
             games = session.query(Game).join(Human, Human.game_id==Game.game_id).join(User, Human.user_id==User.user_id).filter(User.name==user_name).all()
-            games = games_to_json(games)
+            games = games_to_json(session, games)
         self.write({"success": True, "games":games})
 
 
@@ -95,8 +95,9 @@ class GetCylonGamesHandler(tornado.web.RequestHandler):
 
         with sql.db_read_session() as session:
             games = session.query(Game).join(Cylon, Cylon.game_id==Game.game_id).join(User, Cylon.user_id==User.user_id).filter(User.name==user_name).all()
-            games = games_to_json(games)
+            games = games_to_json(session, games)
         self.write({"success": True, "games":games})
+
 
 class GetCylonLeaderGamesHandler(tornado.web.RequestHandler):
     def post(self):
@@ -104,5 +105,14 @@ class GetCylonLeaderGamesHandler(tornado.web.RequestHandler):
 
         with sql.db_read_session() as session:
             games = session.query(Game).join(CylonLeader, CylonLeader.game_id==Game.game_id).join(User, CylonLeader.user_id==User.user_id).filter(User.name==user_name).all()
-            games = games_to_json(games)
+            games = games_to_json(session, games)
+        self.write({"success": True, "games":games})
+
+class GetAllGamesHandler(tornado.web.RequestHandler):
+    def post(self):
+        user_name = get_name(self)
+
+        with sql.db_read_session() as session:
+            games = session.query(Game).join(Player, Player.game_id==Game.game_id).join(User, Player.user_id==User.user_id).filter(User.name==user_name).all()
+            games = games_to_json(session, games)
         self.write({"success": True, "games":games})

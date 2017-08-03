@@ -13,9 +13,12 @@ from api.user_api import GetCylonGamesHandler
 from api.user_api import GetCylonLeaderGamesHandler
 from api.user_api import GetNameHandler
 from api.user_api import GetIdHandler
+from api.user_api import GetAllGamesHandler
+
 from api.game_api import AddGameHandler
 from api.game_api import GetAllHandler
 from api.game_api import DeleteGameHandler
+import logging
 from orm import bsg_info_orm
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -33,12 +36,16 @@ def make_app():
         (r"/api/user/all", GetUsersHandler),
         (r"/api/user/getName", GetNameHandler),
         (r"/api/user/getId", GetIdHandler),
+        (r"/api/user/allGames", GetAllGamesHandler),
+        
         (r"/api/game/add", AddGameHandler),
         (r"/api/game/all", GetAllHandler),
         (r"/api/game/delete", DeleteGameHandler),
     ])
 
 if __name__ == "__main__":
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
     app = make_app()
     app.listen(9999)
     tornado.ioloop.IOLoop.current().start()

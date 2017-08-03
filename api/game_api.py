@@ -3,24 +3,33 @@ import tornado.web
 import sys
 import os
 from tornado.log import enable_pretty_logging
+from collections import defaultdict
 
-from orm.bsg_info_orm import User, Game, Cylon, Human, CylonLeader
+
+import logging
+from sqlalchemy.sql import select
+from sqlalchemy import and_, or_, desc
+from orm.bsg_info_orm import User, Game, Cylon, Human, CylonLeader, Player
 from common import sql
 
-loss_condition_map = {
-    "galactica": 1,
-    "fuel": 2,
-    "food": 3,
-    "morale": 4,
-    "population": 5,
-    "heavy_raider": 6,
-    None: None
-}
-loss_condition_map.update({v:k for k, v in loss_condition_map.iteritems()})
 
+def games_to_json(session, games):
 
-def games_to_json(games):
     output = []
+    cylons = session.query(Cylon.game_id, User.name).filter(Cylon.game_id.in_([game.game_id for game in games])).join(User, User.user_id == Cylon.user_id).all()
+    humans = session.query(Human.game_id, User.name).filter(Human.game_id.in_([game.game_id for game in games])).join(User, User.user_id == Human.user_id).all()
+    cylon_leaders = session.query(CylonLeader.game_id, User.name).filter(CylonLeader.game_id.in_([game.game_id for game in games])).join(User, User.user_id == CylonLeader.user_id).all()
+
+    cylons_in_game = defaultdict(list)
+    humans_in_game = defaultdict(list)
+    cylon_leaders_in_game = defaultdict(list)
+    for cylon in cylons:
+        cylons_in_game[cylon[0]].append(cylon[1])
+    for human in humans:
+        humans_in_game[human[0]].append(human[1])    
+    for cylon_leader in cylon_leaders:
+        cylon_leaders_in_game[cylon_leader[0]].append(cylon_leader[1])
+
     for game in games:
         details = {
             "raptors_left": game.raptors_left,
@@ -39,18 +48,14 @@ def games_to_json(games):
             "notes": game.notes,
         }
         
-        cylons = [cylon.user.name for cylon in game.cylons]
-        humans = [human.user.name for human in game.humans]
-        cylon_leaders = [cylon_leader.user.name for cylon_leader in game.cylon_leaders]
-
         output.append({
             "date": str(game.date),
             "game_id": game.game_id,
-            "loss_condition": loss_condition_map[game.loss_condition],
+            "loss_condition": game.loss_condition,
             "details": details,
-            "cylons": cylons,
-            "humans": humans,
-            "cylon_leaders": cylon_leaders,
+            "cylons": cylons_in_game[game.game_id] if game.game_id in cylons_in_game else None,
+            "humans": humans_in_game[game.game_id] if game.game_id in humans_in_game else None,
+            "cylon_leaders": cylon_leaders_in_game[game.game_id] if game.game_id in cylon_leaders_in_game else None,
         })
     return output
 
@@ -61,15 +66,7 @@ class AddGameHandler(tornado.web.RequestHandler):
         human_user_names = self.get_arguments(name="humans", strip=True)
         cylon_leader_user_names = self.get_arguments(name="cylon_leaders", strip=True)
 
-        for cylon_user_name in cylon_user_names:
-            assert cylon_user_name not in human_user_names
-            assert cylon_user_name not in cylon_leader_user_names
-        
-        for human_user_name in human_user_names:
-            assert human_user_name not in cylon_leader_user_names
-
         [loss_condition] = self.get_arguments(name="loss_condition", strip=True) or [None]
-        loss_condition = loss_condition_map[loss_condition]
         [raptors_left] = self.get_arguments(name="raptors_left", strip=True) or [None]
         [vipers_left] = self.get_arguments(name="vipers_left", strip=True) or [None]
         [fuel_left] = self.get_arguments(name="fuel_left", strip=True) or [None]
@@ -100,19 +97,27 @@ class AddGameHandler(tornado.web.RequestHandler):
                 notes = notes,
             )
             session.add(new_game)
-            session.commit()
             session.flush()
 
             for cylon_user_name in cylon_user_names:
                 user = session.query(User).filter(User.name == cylon_user_name).one()
+                new_player = Player(game_id=new_game.game_id, user_id=user.user_id)
+                session.add(new_player)
+                session.flush()
                 new_cylon = Cylon(game_id=new_game.game_id, user_id=user.user_id)
                 session.add(new_cylon)
             for human_user_name in human_user_names:
                 user = session.query(User).filter(User.name == human_user_name).one()
+                new_player = Player(game_id=new_game.game_id, user_id=user.user_id)
+                session.add(new_player)
+                session.flush()
                 new_human = Human(game_id=new_game.game_id, user_id=user.user_id)
                 session.add(new_human)
             for cylon_leader_user_name in cylon_leader_user_names:
                 user = session.query(User).filter(User.name == cylon_leader_user_name).one()
+                new_player = Player(game_id=new_game.game_id, user_id=user.user_id)
+                session.add(new_player)
+                session.flush()
                 new_cylon_leader = CylonLeader(game_id=new_game.game_id, user_id=user.user_id)
                 session.add(new_cylon_leader)
         self.write({"success": True})
@@ -121,15 +126,19 @@ class AddGameHandler(tornado.web.RequestHandler):
 class GetAllHandler(tornado.web.RequestHandler):
     def post(self):
         with sql.db_write_session() as session:
-            games_raw = session.query(Game).all()
-            games = games_to_json(games_raw)
+            games = session.query(Game).all()
+            games = games_to_json(session, games)
         self.write({"success": True, "games": games})
 
 
 class DeleteGameHandler(tornado.web.RequestHandler):
     def post(self):
-        game_id = self.get_argument(name="game_id", strip=True)
-        
+        game_ids = self.get_arguments(name="game_id", strip=True)
+
         with sql.db_write_session() as session:
-            session.query(Game).filter(Game.game_id == game_id).delete()
+            if game_ids == [u"*"]:
+                session.query(Game).delete()
+            else:
+                for game_id in game_ids:
+                    session.query(Game).filter(Game.game_id == game_id).delete()
         self.write({"success": True})

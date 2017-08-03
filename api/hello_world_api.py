@@ -10,8 +10,8 @@ from tornado.log import enable_pretty_logging
 
 class HelloWorldHandler(tornado.web.RequestHandler):
     def get(self): 
-        self.write("Helo, world")
-        self.render("../templates/newgame_template.html", title="New Game")
+        self.write("XD Helo, world")
+        self.render("../../frontend/newgame_template.html", title="New Game")
     def post(self):
 
         keys = [
