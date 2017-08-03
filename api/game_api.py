@@ -61,6 +61,10 @@ def games_to_json(session, games):
 
 
 class AddGameHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.write("add game")
+        self.render("../templates/newgame_template.html", title="add game")
+
     def post(self):
         cylon_user_names = self.get_arguments(name="cylons", strip=True)
         human_user_names = self.get_arguments(name="humans", strip=True)
