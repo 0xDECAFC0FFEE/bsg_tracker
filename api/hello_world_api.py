@@ -13,6 +13,20 @@ class HelloWorldHandler(tornado.web.RequestHandler):
         self.write("Helo, world")
         self.render("../templates/newgame_template.html", title="New Game")
     def post(self):
-        print("player name: " + str(self.get_body_argument("playerName")))
-        print("character name: " + str(self.get_body_argument("characterName")))
+
+        keys = [
+            "teams__player",
+            "teams__character",
+            "temp2"
+        ]
+
+        for key in keys:
+            print(key + "  ")
+            try:
+                arg = str(self.get_body_argument(key))
+            except (tornado.web.MissingArgumentError):
+                arg = None
+            print(key + "  " + str(arg))
+            self.write(key + "  " + str(arg))
+
 

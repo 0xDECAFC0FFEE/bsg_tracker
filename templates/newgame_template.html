@@ -6,7 +6,7 @@
     <body>
     <form action="" method="post">
       <h3>Characters</h3>
-      <table bgcolor="#ffe4c4">
+      <table id="teams" bgcolor="#ffe4c4">
         <tr>
           <th>Name</th>
           <th>Character</th>
@@ -14,35 +14,35 @@
           <th>Sleeper Team</th>
         </tr>
         <tr>
-          <td> <input value="Bobhi" name="playerName"></td>
-          <td> <input value="Apollo" name="characterName"></td>
+          <td> <input value="Bobhi" name="teams__player"></td>
+          <td> <input value="Apollo" name="teams__character"></td>
           <td>
-            <div>
-              <input id="human1" name="team1" type="radio">
-              <label for="human1">Human</label>
-              <input id="cylon1" name="team1" type="radio">
-              <label for="cylon1">Cylon</label>
-              <input id="other1" name="team1" type="radio">
-              <label for="other1">Other</label>
+            <div class="teams__starting">
+              <input id="teams__starting--human" name="teams__startingx" type="radio">
+              <label for="teams__starting--human">Human</label>
+              <input id="teams__starting--cylon" name="teams__startingy" type="radio">
+              <label for="teams__starting--cylon">Cylon</label>
+              <input id="teams__starting--other" name="teams__startingz" type="radio">
+              <label for="teams__starting--other">Other</label>
             </div>
           </td>
           <td>
-            <div>
-              <input id="human2" name="team2" type="radio">
-              <label for="human2">Human</label>
-              <input id="cylon2" name="team2" type="radio">
-              <label for="cylon2">Cylon</label>
-              <input id="other2" name="team1" type="radio">
-              <label for="other2">Other</label>
+            <div class="teams__sleeper">
+              <input id="teams__sleeper--human" name="teams__sleeper" type="radio">
+              <label for="teams__sleeper--human">Human</label>
+              <input id="teams__sleeper--cylon" name="teams__sleeper" type="radio">
+              <label for="teams__sleeper--cylon">Cylon</label>
+              <input id="teams__sleeper--other" name="teams__sleeper" type="radio">
+              <label for="">Other</label>
             </div>
           </td>
           <td>
-            <button id="addEntry">+</button>
+            <button id="btn__newcharacter">+</button>
           </td>
         </tr>
       </table>
       <h3>Game Results</h3>
-      <table id=gameResult bgcolor="#fff8dc">
+      <table id="results" bgcolor="#fff8dc">
         <tr>
           <th>Date</th>
           <th>Expansions</th>
@@ -51,31 +51,31 @@
         <tr>
           <td>
             <div>
-              <input id="date" type="date">
+              <input id="game__date" type="date">
             </div>
           </td>
           <td>
-            <div>
-              <input id="daybreak" type="checkbox">
-              <label for="daybreak">Daybreak</label>
-              <input id="exodus" type="checkbox" value="Exodus">
-              <label for="exodus">Exodus</label>
-              <input id="pegasus" type="checkbox" value="Pegasus">
-              <label for="pegasus">Peagsus</label>
+            <div id="game__expansions">
+              <input id="game__expansions--daybreak" type="checkbox" value="Daybreak">
+              <label for="game__expansions--daybreak">Daybreak</label>
+              <input id="game__expansions--exodus" type="checkbox" value="Exodus">
+              <label for="game__expansions--exodus">Exodus</label>
+              <input id="game__expansions--pegasus" type="checkbox" value="Pegasus">
+              <label for="game__expansions--pegasus">Peagsus</label>
             </div>
           </td>
           <td>
-            <div>
-              <input id="resultHuman" name="resultVictory" type="radio">
-              <label for="resultHuman">Human</label>
-              <input id="resultCylon" name="resultVictory" type="radio">
-              <label for="resultCylon">Cylon</label>
+            <div id="game__winner">
+              <input id="game__winner--human" name="winner" type="radio">
+              <label for="game__winner--human">Human</label>
+              <input id="game__winner--cylon" name="winner" type="radio">
+              <label for="game__winner--Cylon">Cylon</label>
             </div>
           </td>
         </tr>
       </table>
       <h3>Results Breakdown</h3>
-      <table id=result bgcolor="#deb887">
+      <table id="results" bgcolor="#deb887">
         <tr>
           <th>Resource Dials</th>
           <th>Game Stats</th>
@@ -83,26 +83,26 @@
         <tr>
           <td>
             <div>
-              <table id="resources">
-                <tr><td>Fuel</td><td><input id="resourceFuel" value="10" type="number"></td></tr>
-                <tr><td>Food</td><td><input id="resourceFood" value="8" type="number"></td></tr>
-                <tr><td>Morale</td><td><input id="resourceMorale" value="8" type="number"></td></tr>
-                <tr><td>Population</td><td><input id="resourcePopulation" value="12" type="number"></td></tr>
+              <table id="results__resources">
+                <tr><td>Fuel</td><td><input id="results__resources--fuel" value="10" type="number"></td></tr>
+                <tr><td>Food</td><td><input id="results__resources--food" value="8" type="number"></td></tr>
+                <tr><td>Morale</td><td><input id="results__resources--morale" value="8" type="number"></td></tr>
+                <tr><td>Population</td><td><input id="results__resources--population" value="12" type="number"></td></tr>
               </table>
             </div>
           </td>
           <td>
             <div>
-              <table id="Other Stats">
-                <tr><td>Raptors Left</td><td><input id="statsRaptors" value="default"></td></tr>
-                <tr><td>Vipers Left</td><td><input id="statsVipers" value="default"></td></tr>
-                <tr><td>Distance Traveled</td><td><input id="statsDist" value="default"></td></tr>
+              <table id="results__stats">
+                <tr><td>Raptors Left</td><td><input id="results__stats--raptors" value="4" type="number"></td></tr>
+                <tr><td>Vipers Left</td><td><input id="results__stats--vipers" value="6" type="number"></td></tr>
+                <tr><td>Distance Traveled</td><td><input id="results__stats--distance" value="8" type="number"></td></tr>
               </table>
             </div>
           </td>
         </tr>
       </table>
-      <button type="submit" value="Submit">Submit</button>
+      <button id="btn--submit" type="submit" value="Submit">Submit</button>
     </form>
   </body>
 </html>
