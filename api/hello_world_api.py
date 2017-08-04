@@ -17,16 +17,34 @@ class HelloWorldHandler(tornado.web.RequestHandler):
         keys = [
             "teams__player",
             "teams__character",
-            "temp2"
+            "teams__starting",
+            "teams__sleeper",
+            "game__expansions",
+            "game__winner",
+            "results__resources--fuel",
+            "results__resources--food",
+            "results__resources--morale",
+            "results__resources--population",
+            "results__stats--raptors",
+            "results__stats--vipers",
+            "results__stats--distance",
         ]
 
+        form_map = {}
+
+        post_str = "{"
         for key in keys:
-            print(key + "  ")
             try:
-                arg = str(self.get_body_argument(key))
+                arg = str(self.get_body_arguments(key))
+                print(" >>> " + key + "  " + str(arg))
+                form_map[key] = arg
             except (tornado.web.MissingArgumentError):
-                arg = None
-            print(key + "  " + str(arg))
-            self.write(key + "  " + str(arg))
+                print(" >>> problem with " + key)
+
+        print(form_map)
+        self.write(form_map)
+
+
+
 
 
