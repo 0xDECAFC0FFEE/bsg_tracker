@@ -4,31 +4,36 @@ import sys
 import os
 from tornado.log import enable_pretty_logging
 from collections import defaultdict
-
-
 import logging
 from sqlalchemy.sql import select
 from sqlalchemy import and_, or_, desc
 from orm.bsg_info_orm import User, Game, Cylon, Human, CylonLeader, Player
 from common import sql
-
+import json
+from common.endpoint_input import pop_str_arg, pop_str_args, pop_int_arg, pop_int_args, log
+from common import game_rules
 
 def games_to_json(session, games):
 
     output = []
-    cylons = session.query(Cylon.game_id, User.name).filter(Cylon.game_id.in_([game.game_id for game in games])).join(User, User.user_id == Cylon.user_id).all()
-    humans = session.query(Human.game_id, User.name).filter(Human.game_id.in_([game.game_id for game in games])).join(User, User.user_id == Human.user_id).all()
-    cylon_leaders = session.query(CylonLeader.game_id, User.name).filter(CylonLeader.game_id.in_([game.game_id for game in games])).join(User, User.user_id == CylonLeader.user_id).all()
+    cylons = session.query(Player.game_id, User.name, Player.character, Player.phase).join(Cylon, Cylon.player_id==Player.player_id)\
+    .filter(Player.game_id.in_([game.game_id for game in games])).join(User, User.user_id == Player.user_id).all()
+
+    humans = session.query(Player.game_id, User.name, Player.character, Player.phase).join(Human, Human.player_id==Player.player_id)\
+    .filter(Player.game_id.in_([game.game_id for game in games])).join(User, User.user_id == Player.user_id).all()
+
+    cylon_leaders = session.query(Player.game_id, User.name, Player.character, Player.phase).join(CylonLeader, CylonLeader.player_id==Player.player_id)\
+    .filter(Player.game_id.in_([game.game_id for game in games])).join(User, User.user_id == Player.user_id).all()
 
     cylons_in_game = defaultdict(list)
     humans_in_game = defaultdict(list)
     cylon_leaders_in_game = defaultdict(list)
     for cylon in cylons:
-        cylons_in_game[cylon[0]].append(cylon[1])
+        cylons_in_game[cylon[0]].append({"name": cylon[1], "character": cylon[2], "phase": cylon[3]})
     for human in humans:
-        humans_in_game[human[0]].append(human[1])    
+        humans_in_game[human[0]].append({"name": human[1], "character": human[2], "phase": human[3]})
     for cylon_leader in cylon_leaders:
-        cylon_leaders_in_game[cylon_leader[0]].append(cylon_leader[1])
+        cylon_leaders_in_game[cylon_leader[0]].append({"name": cylon_leader[1], "character": cylon_leader[2], "phase": cylon_leader[3]})
 
     for game in games:
         details = {
@@ -66,25 +71,48 @@ class AddGameHandler(tornado.web.RequestHandler):
         self.render("../templates/newgame_template.html", title="add game")
 
     def post(self):
-        cylon_user_names = self.get_arguments(name="cylons", strip=True)
-        human_user_names = self.get_arguments(name="humans", strip=True)
-        cylon_leader_user_names = self.get_arguments(name="cylon_leaders", strip=True)
+        """
+        inputs:
+            joshua_horowitz: [{"loyalty": "human", "character": "helo"}, {"loyalty": "cylon", "character": "helo"}]
+            andy_tong: [{"loyalty": "human", "character": "starbuck"}, {"loyalty": "human", "character": "roslin"}]
+            lucas_tong: [{"loyalty": "human", "character": "s tigh"}] 
+                # if only one phase is logged, it's automatically copied to the second phase
+            anthony_ebbs: [{"loyalty": "cylon_leader", "character": "six"}]
+            ...
+            loss_condition: won 
+                # can be one of: ["won", "galactica", "fuel", "food", "morale", "population", "heavy_raider"]. see LOSS CONDITION in bsg_info_orm
+            raptors_left: 4
+            fuel_left: 4
+            food_left: 3
+            morale_left: 4
+            population_left: 5
+            distance_left: 0
+            used_pegasus: True
+            used_exodus: True
+            used_daybreak: True
+            notes: asdfasdfasdf
+        """
 
-        [loss_condition] = self.get_arguments(name="loss_condition", strip=True) or [None]
-        [raptors_left] = self.get_arguments(name="raptors_left", strip=True) or [None]
-        [vipers_left] = self.get_arguments(name="vipers_left", strip=True) or [None]
-        [fuel_left] = self.get_arguments(name="fuel_left", strip=True) or [None]
-        [food_left] = self.get_arguments(name="food_left", strip=True) or [None]
-        [morale_left] = self.get_arguments(name="morale_left", strip=True) or [None]
-        [population_left] = self.get_arguments(name="population_left", strip=True) or [None]
-        [distance_left] = self.get_arguments(name="distance_left", strip=True) or [None]
+        loss_condition = pop_str_arg(self, "loss_condition", default=None)
+        raptors_left = pop_str_arg(self, "raptors_left", default=None)
+        vipers_left = pop_str_arg(self, "vipers_left", default=None)
+        fuel_left = pop_str_arg(self, "fuel_left", default=None)
+        food_left = pop_str_arg(self, "food_left", default=None)
+        morale_left = pop_str_arg(self, "morale_left", default=None)
+        population_left = pop_str_arg(self, "population_left", default=None)
+        distance_left = pop_str_arg(self, "distance_left", default=None)
 
-        [used_pegasus] = self.get_arguments(name="used_pegasus", strip=True) or [None]
-        [used_exodus] = self.get_arguments(name="used_exodus", strip=True) or [None]
-        [used_daybreak] = self.get_arguments(name="used_daybreak", strip=True) or [None]
+        used_pegasus = pop_str_arg(self, "used_pegasus", default=None)
+        used_exodus = pop_str_arg(self, "used_exodus", default=None)
+        used_daybreak = pop_str_arg(self, "used_daybreak", default=None)
 
-        [notes] = self.get_arguments(name="notes", strip=True) or [None]
-        
+        notes = pop_str_arg(self, "notes", default=None)
+
+        players = []
+        for user, character in self.request.arguments.items():
+            characters_info = json.loads(character[0])
+            players.append(game_rules.Player(user, characters_info))
+
         with sql.db_write_session() as session:
             new_game = Game(
                 loss_condition=loss_condition, 
@@ -103,27 +131,20 @@ class AddGameHandler(tornado.web.RequestHandler):
             session.add(new_game)
             session.flush()
 
-            for cylon_user_name in cylon_user_names:
-                user = session.query(User).filter(User.name == cylon_user_name).one()
-                new_player = Player(game_id=new_game.game_id, user_id=user.user_id)
-                session.add(new_player)
-                session.flush()
-                new_cylon = Cylon(game_id=new_game.game_id, user_id=user.user_id)
-                session.add(new_cylon)
-            for human_user_name in human_user_names:
-                user = session.query(User).filter(User.name == human_user_name).one()
-                new_player = Player(game_id=new_game.game_id, user_id=user.user_id)
-                session.add(new_player)
-                session.flush()
-                new_human = Human(game_id=new_game.game_id, user_id=user.user_id)
-                session.add(new_human)
-            for cylon_leader_user_name in cylon_leader_user_names:
-                user = session.query(User).filter(User.name == cylon_leader_user_name).one()
-                new_player = Player(game_id=new_game.game_id, user_id=user.user_id)
-                session.add(new_player)
-                session.flush()
-                new_cylon_leader = CylonLeader(game_id=new_game.game_id, user_id=user.user_id)
-                session.add(new_cylon_leader)
+            for player in players:
+                user = session.query(User).filter(User.name == player.name).one()
+                for char in player.characters:
+                    new_player = Player(game_id=new_game.game_id, user_id=user.user_id, character=char.character, phase=char.phase)
+                    session.add(new_player)
+                    session.flush()
+
+                    if char.loyalty == "human":
+                        new_player = Human(player_id = new_player.player_id)
+                    elif char.loyalty == "cylon":
+                        new_player = Cylon(player_id = new_player.player_id)
+                    elif char.loyalty == "cylon_leader":
+                        new_player = CylonLeader(player_id = new_player.player_id)
+                    session.add(new_player)
         self.write({"success": True})
 
 
@@ -137,7 +158,7 @@ class GetAllHandler(tornado.web.RequestHandler):
 
 class DeleteGameHandler(tornado.web.RequestHandler):
     def post(self):
-        game_ids = self.get_arguments(name="game_id", strip=True)
+        game_ids = pop_int_args(self, "game_id")
 
         with sql.db_write_session() as session:
             if game_ids == [u"*"]:

@@ -4,7 +4,7 @@ from sqlalchemy import Boolean, Column, ForeignKey, Index, Integer, MetaData, Pr
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import BIGINT, BLOB, BOOLEAN, CHAR, DATETIME, FLOAT, INT, SMALLINT, SMALLINT, TEXT, TIMESTAMP, VARCHAR, Enum
-# Base.metadata.reflect(some_engine)
+from common import game_rules
 
 DATABASE_NAME = "bsg_info"
 
@@ -20,12 +20,9 @@ character name creation rules:
     3. if alternate version (included in daybreak expansion), append "A"
 """
 
-CHARACTERS = Enum(*[
-    "ADAMA", "S TIGH", "BOOMER", "APOLLO", "STARBUCK", "VALERII", "CHIEF", "ZAREK", "BALTAR", "ROSLIN",     # original
-    "CAIN", "HELO", "DEE", "KAT", "E TIGH", # pegasus
-    "GAETA", "ANDERS", "CALLY", "FOSTER",   # exodus
-    "HOSHI", "HOT DOG", "DOC", "APPOLO A", "ZAREK A", "BALTAR A", "LAMPKIN",   # daybreak
-    ], name="characters")
+CHARACTERS = Enum(*(
+    list(game_rules.CYLON_LEADER_CHARACTERS)+
+    list(game_rules.NON_CYLON_LEADER_CHARACTERS)), name="characters")
 
 class User(Base):
     __tablename__ = "user"
@@ -71,9 +68,11 @@ class Game(Base):
 
 
 class Player(Base):
-    game_id = Column(INT, ForeignKey('game.game_id', ondelete='CASCADE', name='player.game_id game.game_id fk'), primary_key=True)
-    user_id = Column(INT, ForeignKey('user.user_id', name='player.user_id user.user_id fk'), primary_key=True)
-    character = Column(CHARACTERS, nullable=True)
+    player_id = Column(INT, primary_key=True, autoincrement=True)
+    game_id = Column(INT, ForeignKey('game.game_id', ondelete='CASCADE', onupdate='CASCADE', name='player.game_id game.game_id fk'))
+    user_id = Column(INT, ForeignKey('user.user_id', name='player.user_id user.user_id fk', onupdate='CASCADE'))
+    phase = Column(INT)
+    character = Column(CHARACTERS)
     __tablename__ = "player"
     __table_args = (
         {
@@ -81,14 +80,14 @@ class Player(Base):
             "mysql_engine": "InnoDB",
             "mysql_charset": "utf8",
         },
+        UniqueConstraint('game_id', 'user_id', 'phase', name='unique id constraint player')
     )
     user = relationship("User")
     game = relationship("Game")
 
 
 class Cylon(Base):
-    game_id = Column(INT, ForeignKey('player.game_id', ondelete='CASCADE', name='cylon.game_id player.game_id fk'), primary_key=True)
-    user_id = Column(INT, ForeignKey('player.user_id', ondelete='CASCADE', name='cylon.user_id player.user_id fk'), primary_key=True)
+    player_id = Column(INT, ForeignKey('player.player_id', ondelete='CASCADE', onupdate='CASCADE', name='cylon player fk'), primary_key=True)
     __tablename__ = "cylon"
     __table_args = (
         {
@@ -97,12 +96,11 @@ class Cylon(Base):
             "mysql_charset": "utf8",
         },
     )
-    player = relationship("Player", foreign_keys=[user_id], primaryjoin="and_(Cylon.game_id == Player.game_id, Cylon.user_id == Player.user_id)")
+    player = relationship("Player")
 
 
 class Human(Base):
-    game_id = Column(INT, ForeignKey('player.game_id', ondelete='CASCADE', name='human.game_id player.game_id fk'), primary_key=True)
-    user_id = Column(INT, ForeignKey('player.user_id', ondelete='CASCADE', name='human.user_id player.user_id fk'), primary_key=True)
+    player_id = Column(INT, ForeignKey('player.player_id', ondelete='CASCADE', onupdate='CASCADE', name='human player fk'), primary_key=True)
     __tablename__ = "human"
     __table_args = (
         {
@@ -111,12 +109,11 @@ class Human(Base):
             "mysql_charset": "utf8",
         },
     )
-    player = relationship("Player", primaryjoin="and_(Human.game_id == Player.game_id, Human.user_id == Player.user_id)")
+    player = relationship("Player")
 
 
 class CylonLeader(Base):
-    game_id = Column(INT, ForeignKey('player.game_id', ondelete='CASCADE', name='cylon_leader.game_id player.game_id fk'), primary_key=True)
-    user_id = Column(INT, ForeignKey('player.user_id', ondelete='CASCADE', name='cylon_leader.user_id player.user_id fk'), primary_key=True)
+    player_id = Column(INT, ForeignKey('player.player_id', ondelete='CASCADE', onupdate='CASCADE', name='cylon_leader player fk'), primary_key=True)
     __tablename__ = "cylon_leader"
     __table_args = (
         {
@@ -125,4 +122,4 @@ class CylonLeader(Base):
             "mysql_charset": "utf8",
         },
     )
-    player = relationship("Player", primaryjoin="and_(CylonLeader.game_id == Player.game_id, CylonLeader.user_id == Player.user_id)")
+    player = relationship("Player")
