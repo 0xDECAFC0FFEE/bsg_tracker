@@ -11,14 +11,14 @@ from tornado.log import enable_pretty_logging
 class HelloWorldHandler(tornado.web.RequestHandler):
     def get(self): 
         self.write("XD Helo, world")
-        self.render("../templates/newgame_template.html", title="New Game")
+        self.render("../templates/newgame_template.html", title="Hello World")
     def post(self):
 
         keys = [
             "teams__player",
             "teams__character",
-            "teams__starting",
-            "teams__sleeper",
+            "teams__starting--1",
+            "teams__sleeper--1",
             "game__expansions",
             "game__winner",
             "results__resources--fuel",

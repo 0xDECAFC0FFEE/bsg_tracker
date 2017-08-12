@@ -66,9 +66,46 @@ class AddGameHandler(tornado.web.RequestHandler):
         self.render("../templates/newgame_template.html", title="add game")
 
     def post(self):
-        cylon_user_names = self.get_arguments(name="cylons", strip=True)
-        human_user_names = self.get_arguments(name="humans", strip=True)
-        cylon_leader_user_names = self.get_arguments(name="cylon_leaders", strip=True)
+
+        keys = [
+            "teams__player",
+            "teams__character",
+            "teams__starting",
+            "teams__sleeper",
+            "game__expansions",
+            "game__winner",
+            "results__resources--fuel",
+            "results__resources--food",
+            "results__resources--morale",
+            "results__resources--population",
+            "results__stats--raptors",
+            "results__stats--vipers",
+            "results__stats--distance",
+        ]
+
+        form_map = {}
+
+        post_str = "{"
+        for key in keys:
+            try:
+                arg = str(self.get_body_arguments(key))
+                print(" >>> " + key + "  " + str(arg))
+                form_map[key] = arg
+            except (tornado.web.MissingArgumentError):
+                print(" >>> problem with " + key)
+
+        print(form_map)
+        import pdb; pdb.set_trace()
+        self.write(form_map)
+
+
+
+    def manage_post(self, form_map):
+        human_user_names, cylon_user_names, cylon_leader_user_names = self.split_names(form_map)
+
+        # cylon_user_names = self.get_arguments(name="cylons", strip=True)
+        # human_user_names = self.get_arguments(name="humans", strip=True)
+        # cylon_leader_user_names = self.get_arguments(name="cylon_leaders", strip=True)
 
         [loss_condition] = self.get_arguments(name="loss_condition", strip=True) or [None]
         [raptors_left] = self.get_arguments(name="raptors_left", strip=True) or [None]
@@ -79,21 +116,30 @@ class AddGameHandler(tornado.web.RequestHandler):
         [population_left] = self.get_arguments(name="population_left", strip=True) or [None]
         [distance_left] = self.get_arguments(name="distance_left", strip=True) or [None]
 
+        # [loss_condition] = self.get_arguments(name="loss_condition", strip=True) or [None]
+        # [raptors_left] = self.get_arguments(name="raptors_left", strip=True) or [None]
+        # [vipers_left] = self.get_arguments(name="vipers_left", strip=True) or [None]
+        # [fuel_left] = self.get_arguments(name="fuel_left", strip=True) or [None]
+        # [food_left] = self.get_arguments(name="food_left", strip=True) or [None]
+        # [morale_left] = self.get_arguments(name="morale_left", strip=True) or [None]
+        # [population_left] = self.get_arguments(name="population_left", strip=True) or [None]
+        # [distance_left] = self.get_arguments(name="distance_left", strip=True) or [None]
+
         [used_pegasus] = self.get_arguments(name="used_pegasus", strip=True) or [None]
         [used_exodus] = self.get_arguments(name="used_exodus", strip=True) or [None]
         [used_daybreak] = self.get_arguments(name="used_daybreak", strip=True) or [None]
 
         [notes] = self.get_arguments(name="notes", strip=True) or [None]
-        
+
         with sql.db_write_session() as session:
             new_game = Game(
-                loss_condition=loss_condition, 
-                raptors_left = raptors_left, 
-                vipers_left = vipers_left, 
-                fuel_left = fuel_left, 
-                food_left = food_left, 
-                morale_left = morale_left, 
-                population_left = population_left, 
+                loss_condition=loss_condition,
+                raptors_left = raptors_left,
+                vipers_left = vipers_left,
+                fuel_left = fuel_left,
+                food_left = food_left,
+                morale_left = morale_left,
+                population_left = population_left,
                 distance_left = distance_left,
                 used_pegasus = used_pegasus != "False",
                 used_exodus = used_exodus != "False",
