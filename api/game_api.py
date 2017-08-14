@@ -37,9 +37,6 @@ def games_to_json(session, games):
 
     for game in games:
         details = {
-            "raptors_left": game.raptors_left,
-            "vipers_left": game.vipers_left,
-            
             "fuel_left": game.fuel_left,
             "food_left": game.food_left,
             "morale_left": game.morale_left,
@@ -81,7 +78,6 @@ class AddGameHandler(tornado.web.RequestHandler):
             ...
             loss_condition: won 
                 # can be one of: ["won", "galactica", "fuel", "food", "morale", "population", "heavy_raider"]. see LOSS CONDITION in bsg_info_orm
-            raptors_left: 4
             fuel_left: 4
             food_left: 3
             morale_left: 4
@@ -94,8 +90,6 @@ class AddGameHandler(tornado.web.RequestHandler):
         """
 
         loss_condition = pop_str_arg(self, "loss_condition", default=None)
-        raptors_left = pop_str_arg(self, "raptors_left", default=None)
-        vipers_left = pop_str_arg(self, "vipers_left", default=None)
         fuel_left = pop_str_arg(self, "fuel_left", default=None)
         food_left = pop_str_arg(self, "food_left", default=None)
         morale_left = pop_str_arg(self, "morale_left", default=None)
@@ -115,9 +109,7 @@ class AddGameHandler(tornado.web.RequestHandler):
 
         with sql.db_write_session() as session:
             new_game = Game(
-                loss_condition=loss_condition, 
-                raptors_left = raptors_left, 
-                vipers_left = vipers_left, 
+                loss_condition=loss_condition,
                 fuel_left = fuel_left, 
                 food_left = food_left, 
                 morale_left = morale_left, 

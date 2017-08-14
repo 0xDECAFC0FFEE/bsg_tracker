@@ -49,8 +49,6 @@ class Game(Base):
     game_id = Column(INT, primary_key=True, autoincrement=True)
     date = Column(TIMESTAMP, default=datetime.datetime.utcnow, nullable=False)
     loss_condition = Column(LOSS_CONDITIONS, nullable=False)
-    raptors_left = Column(SMALLINT, nullable=True)
-    vipers_left = Column(SMALLINT, nullable=True)
     
     fuel_left = Column(SMALLINT, nullable=True)
     food_left = Column(SMALLINT, nullable=True)
