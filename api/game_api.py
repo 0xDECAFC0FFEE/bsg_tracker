@@ -10,7 +10,7 @@ from sqlalchemy import and_, or_, desc
 from orm.bsg_info_orm import User, Game, Cylon, Human, CylonLeader, Player
 from common import sql
 import json
-from common.endpoint_input import pop_str_arg, pop_str_args, pop_int_arg, pop_int_args, log
+from common.endpoint_input import pop_str_arg, pop_str_args, pop_int_arg, pop_int_args, pop_rest_args, log
 from common import game_rules
 
 def games_to_json(session, games):
@@ -102,8 +102,9 @@ class AddGameHandler(tornado.web.RequestHandler):
 
         notes = pop_str_arg(self, "notes", default=None)
 
+        rest_args = pop_rest_args(self)
         players = []
-        for user, character in self.request.arguments.items():
+        for user, character in rest_args.items():
             characters_info = json.loads(character[0])
             players.append(game_rules.Player(user, characters_info))
 
